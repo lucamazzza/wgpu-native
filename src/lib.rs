@@ -4872,3 +4872,62 @@ pub unsafe extern "C" fn wgpuRenderPassEncoderWriteTimestamp(
         ),
     }
 }
+
+// Vk Handles
+
+
+// Vulkan Natives injection
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpuInstanceGetVulkanInstance(instance: crate::native::WGPUInstance) -> *mut c_void {
+    #[cfg(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan"))]
+    {
+        let instance = instance.as_ref().expect("invalid adapter");
+        let hal_instance = instance.context.instance_as_hal::<hal::api::Vulkan>(instance.id);
+        if let Some(hal_instance) = hal_instance {
+            return hal_instance.shared_instance().raw_instance().handle().as_raw() as usize as *mut c_void;
+        }
+        std::ptr::null_mut()
+    }
+    #[cfg(not(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan")))]
+    {
+        let _ = instance;
+        std::ptr::null_mut()
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpuAdapterGetVulkanPhysicalDevice(adapter: crate::native::WGPUAdapter) -> *mut c_void {
+    #[cfg(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan"))]
+    {
+        let adapter = adapter.as_ref().expect("invalid adapter");
+        let hal_adapter = adapter.context.adapter_as_hal::<hal::api::Vulkan>(adapter.id);
+        if let Some(hal_adapter) = hal_adapter {
+            return hal_adapter.raw_physical_device().as_raw() as usize as *mut c_void;
+        }
+        std::ptr::null_mut()
+    }
+    #[cfg(not(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan")))]
+    {
+        let _ = adapter;
+        std::ptr::null_mut()
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpuAdapterGetVulkanDevice(device: crate::native::WGPUDevice) -> *mut c_void {
+    #[cfg(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan"))]
+    {
+        let device = device.as_ref().expect("invalid device");
+        let hal_device = device.context.device_as_hal::<hal::api::Vulkan>(device.id);
+        if let Some(hal_device) = hal_device {
+            return hal_device.raw_device().handle().as_raw() as usize as *mut c_void;
+        }
+        std::ptr::null_mut()
+    }
+    #[cfg(not(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan")))]
+    {
+        let _ = device;
+        std::ptr::null_mut()
+    }
+}
