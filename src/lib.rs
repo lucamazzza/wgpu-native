@@ -4915,7 +4915,7 @@ pub unsafe extern "C" fn wgpuAdapterGetVulkanPhysicalDevice(adapter: crate::nati
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wgpuAdapterGetVulkanDevice(device: crate::native::WGPUDevice) -> *mut c_void {
+pub unsafe extern "C" fn wgpuDeviceGetVulkanDevice(device: crate::native::WGPUDevice) -> *mut c_void {
     #[cfg(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan"))]
     {
         let device = device.as_ref().expect("invalid device");
