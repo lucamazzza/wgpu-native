@@ -7,6 +7,7 @@ use conv::{
     map_query_set_index, map_sampler_border_color_extras, map_shader_module,
     map_shader_runtime_checks, map_surface, map_surface_configuration, CreateSurfaceParams,
 };
+use naga::Handle;
 use parking_lot::Mutex;
 use smallvec::SmallVec;
 use std::{
@@ -24,8 +25,7 @@ use utils::{
     string_view_into_label, string_view_into_str, texture_format_has_depth,
 };
 use wgc::{
-    command::{bundle_ffi, ComputePass, RenderPass},
-    id, resource, Label,
+    Label, command::{ComputePass, RenderPass, bundle_ffi}, device::global, id, resource
 };
 
 use crate::conv::map_primitive_state;
@@ -4875,9 +4875,6 @@ pub unsafe extern "C" fn wgpuRenderPassEncoderWriteTimestamp(
 
 // Vk Handles
 
-
-// Vulkan Natives injection
-
 #[no_mangle]
 pub unsafe extern "C" fn wgpuInstanceGetVulkanInstance(instance: crate::native::WGPUInstance) -> *mut c_void {
     #[cfg(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan"))]
@@ -4906,7 +4903,7 @@ pub unsafe extern "C" fn wgpuAdapterGetVulkanPhysicalDevice(adapter: crate::nati
         if let Some(hal_adapter) = hal_adapter {
             let handle = hal_adapter.raw_physical_device();
             return *(&handle as *const _ as *const *mut c_void);
-:::::::::
+        }
         std::ptr::null_mut()
     }
     #[cfg(not(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan")))]
@@ -4917,7 +4914,7 @@ pub unsafe extern "C" fn wgpuAdapterGetVulkanPhysicalDevice(adapter: crate::nati
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wgpuAdapterGetVulkanDevice(device: crate::native::WGPUDevice) -> *mut c_void {
+pub unsafe extern "C" fn wgpuDeviceGetVulkanDevice(device: crate::native::WGPUDevice) -> *mut c_void {
     #[cfg(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan"))]
     {
         let device = device.as_ref().expect("invalid device");
@@ -4931,6 +4928,25 @@ pub unsafe extern "C" fn wgpuAdapterGetVulkanDevice(device: crate::native::WGPUD
     #[cfg(not(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan")))]
     {
         let _ = device;
+        std::ptr::null_mut()
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpuTextureGetVulkanImage(
+    texture: native::WGPUTexture
+) -> *mut c_void {
+    #[cfg(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan"))]
+    {
+        let texture = texture.as_ref().expect("invalid texture");
+        let hal_texture = texture.context.texture_as_hal::<hal::api::Vulkan>(texture.id);
+        if let Some(hal_texture) = hal_texture {
+            return hal_texture.raw_handle() as *const _ as *mut c_void;
+        }
+        std::ptr::null_mut()
+    }
+    #[cfg(not(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan")))]
+    {
         std::ptr::null_mut()
     }
 }

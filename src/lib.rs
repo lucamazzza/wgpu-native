@@ -4933,60 +4933,17 @@ pub unsafe extern "C" fn wgpuDeviceGetVulkanDevice(device: crate::native::WGPUDe
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wgpuDeviceCreateTextureFromVulkanImage(
-    device: crate::native::WGPUDevice,
-    vk_image: *mut c_void,
-    descriptor: Option<&native::WGPUTextureDescriptor>,
-) -> native::WGPUTexture {
+pub unsafe extern "C" fn wgpuTextureGetVulkanImage(
+    texture: native::WGPUTexture
+) -> *mut c_void {
     #[cfg(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan"))]
     {
-        let (device_id, context, error_sink) = {
-            let device = device.as_ref().expect("invalid device");
-            (device.id, &device.context, &device.error_sink)
-        };
-        let descriptor = descriptor.expect("invalid descriptor");
-        let desc = wgt::TextureDescriptor {
-            label: string_view_into_label(descriptor.label),
-            size: conv::map_extent3d(&descriptor.size),
-            mip_level_count: descriptor.mipLevelCount,
-            sample_count: descriptor.sampleCount,
-            dimension: conv::map_texture_dimension(descriptor.dimension).unwrap_or(wgt::TextureDimension::D2),
-            format: conv::map_texture_format(descriptor.format).expect("invalid texture format for texture descriptor"),
-            usage: from_u64_bits(descriptor.usage).expect("invalid texture usage for texture descriptor"),
-            view_formats: make_slice(descriptor.viewFormats, descriptor.viewFormatCount)
-                .iter()
-                .map(|v| { conv::map_texture_format(*v).expect("invalid view format for texture descriptor") })
-                .collect(),
-        };
-        use ash::vk::Handle;
-        let raw_image = ash::vk::Image::from_raw(vk_image as u64);
-        let hal_texture = hal::vulkan::Texture { // NOTE: This is not found on macos => check windows
-            raw: raw_image,
-            drop_guard: None,
-        };
-        let (texture_id, error) = context.create_texture_from_hal::<hal::api::Vulkan>( // NOTE: Also this is not found...
-            hal_texture,
-            &desc,
-            device_id,
-        );
-        if let Some(cause) = error {
-            handle_error(error_sink, cause, desc.label, "wgpuDeviceCreateTexture");
+        let texture = texture.as_ref().expect("invalid texture");
+        let hal_texture = texture.context.texture_as_hal::<hal::api::Vulkan>(texture.id);
+        if let Some(hal_texture) = hal_texture {
+            return &hal_texture.raw_handle() as *const _ as *mut c_void;
         }
-        Arc::into_raw(Arc::new(WGPUTextureImpl {
-            context: context.clone(),
-            id: texture_id,
-            error_sink: error_sink.clone(),
-            surface_id: None,
-            has_surface_presented: Arc::default(),
-            data: TextureData {
-                usage: descriptor.usage,
-                dimension: descriptor.dimension,
-                size: descriptor.size,
-                format: descriptor.format,
-                mip_level_count: descriptor.mipLevelCount,
-                sample_count: descriptor.sampleCount,
-            },
-        }))
+        std::ptr::null_mut()
     }
     #[cfg(not(all(any(target_os = "windows", target_os = "linux"), feature = "vulkan")))]
     {
