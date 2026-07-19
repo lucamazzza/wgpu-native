@@ -1,12 +1,13 @@
 [package]
 name = "wgpu-native"
-version = "29.0.0+vk"
+version = "29.0.0+xr"
 authors = [
 	"Dzmitry Malyshau <kvark@mozilla.com>",
 	"Joshua Groves <josh@joshgroves.com>",
 	"Noah Charlton <ncharlton002@gmail.com>",
 	"Almar Klein <almar@almarklein.org>",
 	"Rajesh Malviya <rajveer0malviya@gmail.com>",
+    "Luca Mazza <luca.mazza@mazluc.ch>",
 ]
 edition = "2021"
 rust-version = "1.87"
@@ -24,19 +25,19 @@ resolver = "2"
 
 [workspace.dependencies.wgc]
 package = "wgpu-core"
-version = "29.0.1"
+path = "../wgpu/wgpu-core"
 
 [workspace.dependencies.wgt]
 package = "wgpu-types"
-version = "29.0.1"
+path = "../wgpu/wgpu-types"
 
 [workspace.dependencies.hal]
 package = "wgpu-hal"
-version = "29.0.1"
+path = "../wgpu/wgpu-hal"
 
 [workspace.dependencies.naga]
 package = "naga"
-version = "29.0.1"
+path = "../wgpu/naga"
 
 [lib]
 crate-type = ["cdylib", "staticlib"]
@@ -134,3 +135,8 @@ ash = "0.38.0"
 
 [build-dependencies]
 bindgen = "0.72"
+
+[patch.crates-io]
+wgpu-hal = { path = "../wgpu/wgpu-hal" }
+wgpu-core = { path = "../wgpu/wgpu-core" }
+wgpu-types = { path = "../wgpu/wgpu-types" }
