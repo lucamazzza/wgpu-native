@@ -4880,9 +4880,9 @@ pub unsafe extern "C" fn wgpuInstanceGetD3D12Instance(instance: crate::native::W
     #[cfg(all(any(target_os = "windows", target_os = "linux"), feature = "dx12"))]
     {
         let instance = instance.as_ref().expect("invalid adapter");
-        let hal_instance = instance.context.instance_as_hal::<hal::api::D3D12>();
+        let hal_instance = instance.context.instance_as_hal::<hal::api::Dx12>();
         if let Some(hal_instance) = hal_instance {
-            let handle = hal_instance.shared_instance().raw_instance().handle();
+            let handle = hal_instance.raw_factory4();
             return *(&handle as *const _ as *const *mut c_void);
         }
         std::ptr::null_mut()
@@ -4899,9 +4899,9 @@ pub unsafe extern "C" fn wgpuAdapterGetD3D12PhysicalDevice(adapter: crate::nativ
     #[cfg(all(any(target_os = "windows", target_os = "linux"), feature = "dx12"))]
     {
         let adapter = adapter.as_ref().expect("invalid adapter");
-        let hal_adapter = adapter.context.adapter_as_hal::<hal::api::D3D12>(adapter.id);
+        let hal_adapter = adapter.context.adapter_as_hal::<hal::api::Dx12>(adapter.id);
         if let Some(hal_adapter) = hal_adapter {
-            let handle = hal_adapter.raw_physical_device();
+            let handle = hal_adapter.as_raw();
             return *(&handle as *const _ as *const *mut c_void);
         }
         std::ptr::null_mut()
@@ -4918,9 +4918,9 @@ pub unsafe extern "C" fn wgpuDeviceGetD3D12Device(device: crate::native::WGPUDev
     #[cfg(all(any(target_os = "windows", target_os = "linux"), feature = "dx12"))]
     {
         let device = device.as_ref().expect("invalid device");
-        let hal_device = device.context.device_as_hal::<hal::api::D3D12>(device.id);
+        let hal_device = device.context.device_as_hal::<hal::api::Dx12>(device.id);
         if let Some(hal_device) = hal_device {
-            let handle = hal_device.raw_device().handle();
+            let handle = hal_device.raw_device();
             return *(&handle as *const _ as *const *mut c_void);
         }
         std::ptr::null_mut()
@@ -4939,9 +4939,9 @@ pub unsafe extern "C" fn wgpuTextureGetD3D12Image(
     #[cfg(all(any(target_os = "windows", target_os = "linux"), feature = "dx12"))]
     {
         let texture = texture.as_ref().expect("invalid texture");
-        let hal_texture = texture.context.texture_as_hal::<hal::api::D3D12>(texture.id);
+        let hal_texture = texture.context.texture_as_hal::<hal::api::Dx12>(texture.id);
         if let Some(hal_texture) = hal_texture {
-            return &hal_texture.raw_handle() as *const _ as *mut c_void;
+            return &hal_texture.raw_resource() as *const _ as *mut c_void;
         }
         std::ptr::null_mut()
     }
