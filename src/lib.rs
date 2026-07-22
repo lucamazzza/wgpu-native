@@ -4975,10 +4975,6 @@ pub unsafe extern "C" fn wgpuQueueGetD3D12CommandQueue(
 }
 
 unsafe fn into_iunknown_ptr_addref<T: Interface>(iface: &T) -> *mut c_void {
-    let unk: IUnknown = match iface.cast() {
-        Ok(u) => u,
-        Err(_) => return std::ptr::null_mut(),
-    };
-    let raw = unk.into_raw();
-    raw as *mut c_void
+    let cloned = iface.clone();
+    cloned.into_raw() as *mut c_void
 }
