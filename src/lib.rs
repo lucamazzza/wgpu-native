@@ -10,6 +10,7 @@ use conv::{
 use naga::Handle;
 use parking_lot::Mutex;
 use smallvec::SmallVec;
+use windows::core::{IUnknown, Interface};
 use std::{
     borrow::Cow,
     error,
@@ -4882,8 +4883,8 @@ pub unsafe extern "C" fn wgpuInstanceGetD3D12Instance(instance: crate::native::W
         let instance = instance.as_ref().expect("invalid adapter");
         let hal_instance = instance.context.instance_as_hal::<hal::api::Dx12>();
         if let Some(hal_instance) = hal_instance {
-            let handle = hal_instance.raw_factory4();
-            return *(&handle as *const _ as *const *mut c_void);
+            let fac = hal_instance.raw_factory4();
+            return into_iunknown_ptr_addref(fac);
         }
         std::ptr::null_mut()
     }
@@ -4901,8 +4902,8 @@ pub unsafe extern "C" fn wgpuAdapterGetD3D12PhysicalDevice(adapter: crate::nativ
         let adapter = adapter.as_ref().expect("invalid adapter");
         let hal_adapter = adapter.context.adapter_as_hal::<hal::api::Dx12>(adapter.id);
         if let Some(hal_adapter) = hal_adapter {
-            let handle = hal_adapter.as_raw();
-            return *(&handle as *const _ as *const *mut c_void);
+            let ad = hal_adapter.as_raw();
+            return into_iunknown_ptr_addref(ad);
         }
         std::ptr::null_mut()
     }
@@ -4920,8 +4921,8 @@ pub unsafe extern "C" fn wgpuDeviceGetD3D12Device(device: crate::native::WGPUDev
         let device = device.as_ref().expect("invalid device");
         let hal_device = device.context.device_as_hal::<hal::api::Dx12>(device.id);
         if let Some(hal_device) = hal_device {
-            let handle = hal_device.raw_device();
-            return *(&handle as *const _ as *const *mut c_void);
+            let dev = hal_device.raw_device();
+            return into_iunknown_ptr_addref(dev);
         }
         std::ptr::null_mut()
     }
@@ -4941,7 +4942,8 @@ pub unsafe extern "C" fn wgpuTextureGetD3D12Image(
         let texture = texture.as_ref().expect("invalid texture");
         let hal_texture = texture.context.texture_as_hal::<hal::api::Dx12>(texture.id);
         if let Some(hal_texture) = hal_texture {
-            return &hal_texture.raw_resource() as *const _ as *mut c_void;
+            let res = hal_texture.raw_resource();
+            return into_iunknown_ptr_addref(res);
         }
         std::ptr::null_mut()
     }
@@ -4949,4 +4951,34 @@ pub unsafe extern "C" fn wgpuTextureGetD3D12Image(
     {
         std::ptr::null_mut()
     }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpuQueueGetD3D12CommandQueue(
+    queue: native::WGPUQueue,
+) -> *mut c_void {
+    #[cfg(all(any(target_os = "windows", target_os = "linux"), feature = "dx12"))]
+    {
+        let queue = queue.as_ref().expect("invalid queue");
+        let hal_queue = queue.queue.context.queue_as_hal::<hal::api::Dx12>(queue.queue.id);
+        if let Some(hal_queue) = hal_queue {
+            let q = hal_queue.as_raw();
+            return into_iunknown_ptr_addref(q);
+        }
+        std::ptr::null_mut()
+    }
+    #[cfg(not(all(any(target_os = "windows", target_os = "linux"), feature = "dx12")))]
+    {
+        let _ = queue;
+        std::ptr::null_mut()
+    }
+}
+
+unsafe fn into_iunknown_ptr_addref<T: Interface>(iface: &T) -> *mut c_void {
+    let unk: IUnknown = match iface.cast() {
+        Ok(u) => u,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let raw = unk.into_raw();
+    raw as *mut c_void
 }
