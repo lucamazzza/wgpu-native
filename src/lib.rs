@@ -4884,7 +4884,7 @@ pub unsafe extern "C" fn wgpuInstanceGetD3D12Instance(instance: crate::native::W
         let hal_instance = instance.context.instance_as_hal::<hal::api::Dx12>();
         if let Some(hal_instance) = hal_instance {
             let fac = hal_instance.raw_factory4();
-            return into_iunknown_ptr_addref(fac);
+            return into_raw_ptr_addref(fac);
         }
         std::ptr::null_mut()
     }
@@ -4903,7 +4903,7 @@ pub unsafe extern "C" fn wgpuAdapterGetD3D12PhysicalDevice(adapter: crate::nativ
         let hal_adapter = adapter.context.adapter_as_hal::<hal::api::Dx12>(adapter.id);
         if let Some(hal_adapter) = hal_adapter {
             let ad = hal_adapter.as_raw();
-            return into_iunknown_ptr_addref(ad);
+            return into_raw_ptr_addref(ad);
         }
         std::ptr::null_mut()
     }
@@ -4922,7 +4922,7 @@ pub unsafe extern "C" fn wgpuDeviceGetD3D12Device(device: crate::native::WGPUDev
         let hal_device = device.context.device_as_hal::<hal::api::Dx12>(device.id);
         if let Some(hal_device) = hal_device {
             let dev = hal_device.raw_device();
-            return into_iunknown_ptr_addref(dev);
+            return into_raw_ptr_addref(dev);
         }
         std::ptr::null_mut()
     }
@@ -4943,7 +4943,7 @@ pub unsafe extern "C" fn wgpuTextureGetD3D12Image(
         let hal_texture = texture.context.texture_as_hal::<hal::api::Dx12>(texture.id);
         if let Some(hal_texture) = hal_texture {
             let res = hal_texture.raw_resource();
-            return into_iunknown_ptr_addref(res);
+            return into_raw_ptr_addref(res);
         }
         std::ptr::null_mut()
     }
@@ -4963,7 +4963,7 @@ pub unsafe extern "C" fn wgpuQueueGetD3D12CommandQueue(
         let hal_queue = queue.queue.context.queue_as_hal::<hal::api::Dx12>(queue.queue.id);
         if let Some(hal_queue) = hal_queue {
             let q = hal_queue.as_raw();
-            return into_iunknown_ptr_addref(q);
+            return into_raw_ptr_addref(q);
         }
         std::ptr::null_mut()
     }
@@ -4974,7 +4974,7 @@ pub unsafe extern "C" fn wgpuQueueGetD3D12CommandQueue(
     }
 }
 
-unsafe fn into_iunknown_ptr_addref<T: Interface>(iface: &T) -> *mut c_void {
+unsafe fn into_raw_ptr_addref<T: Interface>(iface: &T) -> *mut c_void {
     let cloned = iface.clone();
     cloned.into_raw() as *mut c_void
 }
